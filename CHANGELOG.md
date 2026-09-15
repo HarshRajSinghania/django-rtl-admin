@@ -8,6 +8,10 @@ All notable changes to this project are documented here. The format follows
 
 First release.
 
+Supported on Python 3.10+ and Django 4.2, 5.x and 6.x. CI covers Python 3.10
+and 3.12 against Django 4.2 and 5.2, and Python 3.12 and 3.13 against Django
+6.1, each with and without Babel installed.
+
 ### Added
 
 - **Direction-aware admin styling.** A template override of
