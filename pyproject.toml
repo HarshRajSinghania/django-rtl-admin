@@ -1,0 +1,101 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "django-rtl-admin"
+version = "0.1.0"
+description = "A properly bilingual, right-to-left Django admin: logical-property styling, Unicode-isolated bidirectional text, locale-aware formatting and a language switcher."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Marwan Maher", email = "marwanmaher635@gmail.com" }]
+keywords = [
+    "django",
+    "django-admin",
+    "rtl",
+    "bidi",
+    "i18n",
+    "l10n",
+    "arabic",
+    "hebrew",
+    "persian",
+    "internationalization",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: Arabic",
+    "Natural Language :: English",
+    "Natural Language :: Hebrew",
+    "Natural Language :: Persian",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Internationalization",
+    "Topic :: Software Development :: Localization",
+]
+dependencies = ["Django>=4.2"]
+
+[project.optional-dependencies]
+babel = ["Babel>=2.12"]
+test = ["pytest>=8", "pytest-django>=4.8", "Babel>=2.12"]
+
+[project.urls]
+Homepage = "https://github.com/MarwanMaher0/django-rtl-admin"
+Source = "https://github.com/MarwanMaher0/django-rtl-admin"
+Issues = "https://github.com/MarwanMaher0/django-rtl-admin/issues"
+Changelog = "https://github.com/MarwanMaher0/django-rtl-admin/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+# Everything under the package directory ships in the wheel, templates and
+# static files included.
+packages = ["src/django_rtl_admin"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/example",
+    "/docs",
+    "/README.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+    "/pyproject.toml",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = [".venv42", "example/library/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "DJ", "RUF"]
+ignore = [
+    "RUF012",
+    # This package exists to handle Arabic, Hebrew and Persian text; the
+    # "ambiguous unicode character" rules fire on every single one of them.
+    "RUF001",
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Attribute access is the assertion in the settings tests.
+"tests/*" = ["E501", "B018"]
