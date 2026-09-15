@@ -1,0 +1,61 @@
+name: Bug report
+description: Something in django-rtl-admin does not work the way the README says it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. Security problems do not belong here: report them privately
+        through [Report a vulnerability](https://github.com/MarwanMaher0/django-rtl-admin/security/advisories/new).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, including any error message or output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps that shows the problem. For a layout bug, add a screenshot and the admin page URL pattern (for example the changelist or a change form).
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: django-rtl-admin, Django and Python versions
+      placeholder: "0.1.0, Django 5.2.6, Python 3.12.5"
+    validations:
+      required: true
+  - type: dropdown
+    id: babel
+    attributes:
+      label: Is Babel installed?
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+  - type: input
+    id: language
+    attributes:
+      label: Active language code and browser
+      placeholder: "ar-eg, Firefox 131"
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots, logs, or what you already tried.
