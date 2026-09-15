@@ -1,0 +1,13 @@
+{% load i18n %}{% if enabled %}
+<form class="rtl-admin-language-switcher" action="{{ set_language_url }}" method="post">
+  <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+  <input type="hidden" name="next" value="{{ redirect_to }}">
+  <label class="rtl-admin-language-switcher__label" for="rtl-admin-language-select">{% translate "Language" %}</label>
+  <select id="rtl-admin-language-select" class="rtl-admin-language-switcher__select" name="language">
+    {% for language in languages %}
+      <option value="{{ language.code }}" lang="{{ language.code }}" dir="{% if language.bidi %}rtl{% else %}ltr{% endif %}"{% if language.is_active %} selected{% endif %}>{{ language.label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="rtl-admin-language-switcher__submit">{% translate "Go" %}</button>
+</form>
+{% endif %}

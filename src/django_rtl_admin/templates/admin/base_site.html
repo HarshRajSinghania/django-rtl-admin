@@ -1,0 +1,9 @@
+{% extends "django_rtl_admin/base_site.html" %}{% comment %}
+Shadows django.contrib.admin's own admin/base_site.html.
+
+All of the work lives in django_rtl_admin/base_site.html, so a project that
+needs its own admin/base_site.html can keep the direction-aware admin by
+extending that template instead of this one:
+
+    {% templatetag openblock %} extends "django_rtl_admin/base_site.html" {% templatetag closeblock %}
+{% endcomment %}

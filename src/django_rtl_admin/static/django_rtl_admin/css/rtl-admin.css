@@ -1,0 +1,931 @@
+/*!
+ * django-rtl-admin -- direction-aware styling for the Django admin.
+ *
+ * The contrib admin styles the interface with *physical* properties
+ * (margin-left, padding-right, float: left, text-align: left) and then ships a
+ * hand-maintained admin/css/rtl.css that flips a subset of them back.  Every
+ * rule the mirror file forgets -- and it forgets plenty -- is a place where an
+ * Arabic, Hebrew, Persian or Urdu admin visibly breaks.
+ *
+ * This file takes the other approach: it restates the same rules with
+ * *logical* properties (margin-inline-start, padding-inline-end,
+ * text-align: start, float: inline-end), which are correct in both directions
+ * by construction.  Almost everything below is therefore scoped to `.rtl-admin`
+ * rather than `.rtl-admin--rtl`: in an LTR admin the rules are no-ops, and in
+ * an RTL admin they flip themselves.
+ *
+ * Only genuinely direction-dependent things -- sprite offsets, chevrons,
+ * mirrored icons -- are scoped to `.rtl-admin--rtl`.
+ *
+ * Loaded from the `responsive` block of admin/base.html, i.e. after
+ * admin/css/rtl.css and admin/css/responsive_rtl.css, so these rules win.
+ */
+
+:root {
+  /* Latin first, then faces that actually carry Arabic/Hebrew glyphs: font
+     fallback is per-glyph, so Latin text keeps the system UI face while
+     Arabic text gets a real Arabic face instead of a tofu box. */
+  --rtl-admin-font-stack:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    "Segoe UI Arabic", "Noto Naskh Arabic", "Noto Sans Arabic", "Geeza Pro",
+    "Amiri", "Noto Sans Hebrew", Tahoma, Arial, sans-serif;
+  --rtl-admin-rtl-line-height: 1.5;
+  --rtl-admin-switcher-gap: 6px;
+}
+
+/* ==========================================================================
+   1. Direction
+   ========================================================================== */
+
+/* Django's admin/base.html already sets dir="rtl" on <html> for languages it
+   knows about.  The body class is the belt to that pair of braces: it also
+   covers locales added through RTL_ADMIN["EXTRA_RTL_LANGUAGES"], and it is what
+   every rule below keys off, so the stylesheet behaves identically whether or
+   not the dir attribute made it through. */
+body.rtl-admin--rtl {
+  direction: rtl;
+}
+
+body.rtl-admin--ltr {
+  direction: ltr;
+}
+
+body.rtl-admin--rtl,
+body.rtl-admin--rtl input,
+body.rtl-admin--rtl textarea,
+body.rtl-admin--rtl select,
+body.rtl-admin--rtl button {
+  font-family: var(--rtl-admin-font-stack);
+}
+
+body.rtl-admin--rtl {
+  line-height: var(--rtl-admin-rtl-line-height);
+}
+
+/* ==========================================================================
+   2. Bidirectional safety nets
+   ========================================================================== */
+
+/* Table cells and read-only values hold data, not prose.  Isolating them stops
+   one mixed-direction value (an email, a path, a version string) from dragging
+   its neighbours around inside the row. */
+.rtl-admin--isolate-cells #result_list tbody td,
+.rtl-admin--isolate-cells #result_list tbody th,
+.rtl-admin--isolate-cells .inline-group .tabular td,
+.rtl-admin--isolate-cells div.breadcrumbs,
+.rtl-admin--isolate-cells #content h1,
+.rtl-admin--isolate-cells .object-tools a,
+.rtl-admin--isolate-cells #changelist-filter li a {
+  unicode-bidi: isolate;
+}
+
+/* Labels, help text, fieldset descriptions and read-only values hold
+   application content, not chrome.  `plaintext` makes each one resolve its own
+   direction from its first strong character, which is what stops an English
+   label from rendering as ":Title (Arabic)" with the colon flung to the far
+   side of an RTL form. */
+.rtl-admin .form-row label,
+.rtl-admin .aligned label,
+.rtl-admin fieldset .description,
+.rtl-admin .help,
+.rtl-admin p.help,
+.rtl-admin div.help,
+.rtl-admin div.readonly,
+.rtl-admin .form-row .readonly,
+.rtl-admin .inline-related h3 .inline_label {
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+/* A bilingual admin gets both scripts typed into the same form.  `plaintext`
+   is the CSS equivalent of dir="auto": every field, and every paragraph inside
+   a textarea, picks its own direction from the first strong character the user
+   actually typed. */
+.rtl-admin--plaintext-fields input[type="text"],
+.rtl-admin--plaintext-fields input[type="email"],
+.rtl-admin--plaintext-fields input[type="url"],
+.rtl-admin--plaintext-fields input[type="search"],
+.rtl-admin--plaintext-fields input[type="tel"],
+.rtl-admin--plaintext-fields input:not([type]),
+.rtl-admin--plaintext-fields textarea {
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+/* URLs, slugs and machine identifiers are always LTR, whatever the UI is. */
+.rtl-admin input.vURLField,
+.rtl-admin input[name="username"],
+.rtl-admin input[type="password"],
+.rtl-admin .vUUIDField,
+.rtl-admin code,
+.rtl-admin pre,
+.rtl-admin .code {
+  direction: ltr;
+  text-align: start;
+  unicode-bidi: isolate;
+}
+
+/* ==========================================================================
+   3. Global blocks
+   ========================================================================== */
+
+.rtl-admin th,
+.rtl-admin td {
+  text-align: start;
+}
+
+.rtl-admin .module h2,
+.rtl-admin .module caption,
+.rtl-admin .inline-group h2,
+.rtl-admin .inline-related h2 {
+  text-align: start;
+}
+
+.rtl-admin .module ul,
+.rtl-admin .module ol {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-start: 1.5em;
+}
+
+.rtl-admin .module ul.actionlist {
+  margin-inline-start: 0;
+}
+
+.rtl-admin dd {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-start: 0;
+}
+
+/* Left unmirrored by contrib: a quoted block keeps an LTR rule and indent. */
+.rtl-admin blockquote {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-start: 2px;
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-start: 10px;
+  border-left: none;
+  border-right: none;
+  border-inline-start: 5px solid var(--hairline-color, #ddd);
+}
+
+.rtl-admin .module blockquote {
+  margin-inline-start: 12px;
+}
+
+.rtl-admin div.breadcrumbs {
+  text-align: start;
+}
+
+.rtl-admin .skip-to-content-link:focus {
+  left: auto;
+  right: auto;
+  inset-inline-start: 0;
+}
+
+/* ==========================================================================
+   4. Header, user tools and the language switcher
+   ========================================================================== */
+
+/* contrib floats #user-tools right and never unfloats it, so in an RTL admin
+   the welcome block stays pinned to the wrong edge. */
+.rtl-admin #user-tools {
+  float: inline-end;
+  text-align: end;
+  left: auto;
+  right: auto;
+}
+
+.rtl-admin #header {
+  gap: 8px;
+}
+
+.rtl-admin-language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rtl-admin-switcher-gap);
+  margin-inline-start: 8px;
+  vertical-align: middle;
+}
+
+.rtl-admin-language-switcher__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+.rtl-admin-language-switcher__select {
+  padding: 2px 6px;
+  font-size: 0.8125rem;
+  max-width: 14rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #ccc);
+  background-color: var(--body-bg, #fff);
+  color: var(--body-fg, #303030);
+}
+
+.rtl-admin-language-switcher__submit {
+  padding: 2px 8px;
+  font-size: 0.8125rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #ccc);
+  background: var(--button-bg, #79aec8);
+  color: var(--button-fg, #fff);
+  cursor: pointer;
+}
+
+#header .rtl-admin-language-switcher__label,
+#header .rtl-admin-language-switcher__select {
+  color: var(--header-link-color, #fff);
+}
+
+#header .rtl-admin-language-switcher__select {
+  background-color: transparent;
+  border-color: color-mix(in srgb, var(--header-link-color, #fff) 45%, transparent);
+}
+
+#header .rtl-admin-language-switcher__select option {
+  color: var(--body-fg, #303030);
+  background-color: var(--body-bg, #fff);
+}
+
+#branding .rtl-admin-language-switcher {
+  margin-inline-start: 16px;
+}
+
+/* ==========================================================================
+   5. Object tools ("Add", "History", "View on site")
+   ========================================================================== */
+
+/* contrib mirrors `.object-tools` but not the list items, the anchors or the
+   icon, so the buttons keep their LTR order and the "+" lands inside the text. */
+.rtl-admin .object-tools {
+  float: inline-end;
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-start: 0;
+}
+
+.rtl-admin .object-tools li {
+  float: inline-start;
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-start: 5px;
+}
+
+.rtl-admin .object-tools a:link,
+.rtl-admin .object-tools a:visited {
+  float: inline-start;
+}
+
+.rtl-admin .object-tools a.viewsitelink,
+.rtl-admin .object-tools a.addlink {
+  padding-left: 12px;
+  padding-right: 12px;
+  padding-inline-end: 26px;
+  background-position: right 7px center;
+}
+
+.rtl-admin--rtl .object-tools a.viewsitelink,
+.rtl-admin--rtl .object-tools a.addlink {
+  background-position: left 7px center;
+}
+
+/* ==========================================================================
+   6. Action icons
+   ========================================================================== */
+
+.rtl-admin .viewlink,
+.rtl-admin .inlineviewlink,
+.rtl-admin .hidelink,
+.rtl-admin .addlink,
+.rtl-admin .changelink,
+.rtl-admin .inlinechangelink,
+.rtl-admin .deletelink {
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-start: 16px;
+  background-position: 0 1px;
+}
+
+.rtl-admin--rtl .viewlink,
+.rtl-admin--rtl .inlineviewlink,
+.rtl-admin--rtl .hidelink,
+.rtl-admin--rtl .addlink,
+.rtl-admin--rtl .changelink,
+.rtl-admin--rtl .inlinechangelink,
+.rtl-admin--rtl .deletelink {
+  background-position: 100% 1px;
+}
+
+.rtl-admin .errornote,
+.rtl-admin .errorlist li {
+  background-position: 5px 12px;
+}
+
+.rtl-admin--rtl .errornote,
+.rtl-admin--rtl .errorlist li {
+  background-position: calc(100% - 5px) 12px;
+}
+
+/* ==========================================================================
+   7. Page columns
+   ========================================================================== */
+
+.rtl-admin #content-main {
+  float: inline-start;
+}
+
+.rtl-admin #content-related {
+  float: inline-end;
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-end: -300px;
+}
+
+.rtl-admin .colMS {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-end: 300px;
+}
+
+/* contrib mirrors .colMS but forgets .colSM entirely. */
+.rtl-admin .colSM {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-start: 300px;
+}
+
+.rtl-admin .colSM #content-related {
+  float: inline-start;
+  margin-inline-end: 0;
+  margin-inline-start: -300px;
+}
+
+.rtl-admin .colSM #content-main {
+  float: inline-end;
+}
+
+.rtl-admin #content-related p {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.rtl-admin #content-related .actionlist li {
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-start: 18px;
+}
+
+.rtl-admin .dashboard .module table td a {
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-start: 16px;
+  padding-inline-end: 0.6em;
+}
+
+/* ==========================================================================
+   8. Navigation sidebar
+   ========================================================================== */
+
+.rtl-admin .toggle-nav-sidebar {
+  left: auto;
+  right: auto;
+  inset-inline-start: 0;
+  border-left: 0;
+  border-right: 0;
+  border-inline-end: 1px solid var(--hairline-color);
+}
+
+.rtl-admin #nav-sidebar {
+  left: auto;
+  right: auto;
+  margin-left: 0;
+  margin-right: 0;
+  inset-inline-start: -276px;
+  margin-inline-start: -276px;
+  border-left: 0;
+  border-right: 0;
+  border-inline-end: 1px solid var(--hairline-color);
+}
+
+.rtl-admin .main.shifted > #nav-sidebar {
+  margin-inline-start: 0;
+}
+
+.rtl-admin #nav-sidebar .module th,
+.rtl-admin #nav-sidebar .module caption {
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-inline-start: 16px;
+}
+
+/* The collapse chevron is a literal character, so contrib leaves it pointing
+   the wrong way in RTL. */
+.rtl-admin--rtl .toggle-nav-sidebar::before {
+  content: "\00AB";
+}
+
+.rtl-admin--rtl .main.shifted .toggle-nav-sidebar::before {
+  content: "\00BB";
+}
+
+/* ==========================================================================
+   9. Changelist: table, sorting, filters, search, actions, pagination
+   ========================================================================== */
+
+.rtl-admin .change-list .filtered table {
+  border-left: none;
+  border-right: none;
+  border-inline-end: none;
+}
+
+.rtl-admin .change-list .filtered table tbody th {
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-end: 1em;
+}
+
+.rtl-admin #changelist table tbody td:first-child,
+.rtl-admin #changelist table tbody th:first-child {
+  border-inline-start: none;
+  border-inline-end: none;
+}
+
+.rtl-admin thead th:first-child,
+.rtl-admin tfoot td:first-child {
+  border-inline-start: none;
+}
+
+/* -- sorting -- */
+
+.rtl-admin thead th.sorted .text {
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-end: 42px;
+}
+
+.rtl-admin table thead th.sorted .sortoptions {
+  float: inline-end;
+  text-align: end;
+}
+
+.rtl-admin table thead th.sorted .sortoptions a.sortremove::after {
+  left: auto;
+  right: auto;
+  inset-inline-start: 3px;
+}
+
+/* -- filters -- */
+
+.rtl-admin #changelist-filter {
+  border-left: none;
+  border-right: none;
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-start: 30px;
+}
+
+.rtl-admin #changelist-filter li {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+}
+
+.rtl-admin #changelist-filter li.selected {
+  border-left: none;
+  border-right: none;
+  border-inline-start: 5px solid var(--hairline-color);
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-start: 10px;
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-start: -15px;
+}
+
+.rtl-admin #changelist-filter h2,
+.rtl-admin #changelist-filter h3 {
+  text-align: start;
+}
+
+/* -- search -- */
+
+.rtl-admin #changelist-search img,
+.rtl-admin #changelist-search .search-icon {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-end: 4px;
+}
+
+.rtl-admin #toolbar form#changelist-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rtl-admin #toolbar form#changelist-search input[type="submit"] {
+  margin-inline-start: 0;
+}
+
+/* -- actions -- */
+
+.rtl-admin .filtered .actions {
+  border-left: none;
+  border-right: none;
+  border-inline-end: none;
+}
+
+.rtl-admin #changelist .actions select {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-start: 10px;
+}
+
+.rtl-admin #changelist .actions label,
+.rtl-admin #changelist .actions .action-counter {
+  margin-inline-end: 6px;
+}
+
+/* -- pagination -- */
+
+.rtl-admin .paginator .end {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-end: 6px;
+}
+
+.rtl-admin .paginator input {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-start: auto;
+}
+
+/* ==========================================================================
+   10. Forms
+   ========================================================================== */
+
+.rtl-admin .aligned label {
+  padding: 0 0 3px 0;
+  padding-inline-end: 1em;
+  text-align: start;
+}
+
+.rtl-admin form .aligned ul {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+  margin-inline-start: 160px;
+  padding-inline-start: 10px;
+}
+
+.rtl-admin form div.help ul,
+.rtl-admin form .aligned table p,
+.rtl-admin form .related-widget-wrapper ul,
+.rtl-admin form ul.inline {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+}
+
+/* These sibling selectors outrank contrib's own RTL override, so in an RTL
+   admin the help text ends up indented on *both* sides. */
+.rtl-admin form .aligned p.help,
+.rtl-admin form .aligned div.help,
+.rtl-admin form .aligned input + p.help,
+.rtl-admin form .aligned textarea + p.help,
+.rtl-admin form .aligned select + p.help,
+.rtl-admin form .aligned input + div.help,
+.rtl-admin form .aligned textarea + div.help,
+.rtl-admin form .aligned select + div.help {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+  margin-inline-start: 160px;
+  padding-inline-start: 10px;
+}
+
+.rtl-admin .aligned label + p,
+.rtl-admin .aligned label + div.readonly,
+.rtl-admin .aligned .checkbox-row + div.help,
+.rtl-admin form .aligned p.date div.help.timezonewarning,
+.rtl-admin form .aligned p.datetime div.help.timezonewarning,
+.rtl-admin form .aligned p.time div.help.timezonewarning {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+}
+
+.rtl-admin form .wide p.help,
+.rtl-admin form .wide ul.errorlist,
+.rtl-admin form .wide div.help {
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-start: 50px;
+}
+
+.rtl-admin form .form-row p {
+  padding-inline-start: 0;
+}
+
+.rtl-admin form div.radiolist div {
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-end: 7px;
+}
+
+.rtl-admin form ul.inline li {
+  float: inline-start;
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-end: 7px;
+}
+
+.rtl-admin fieldset .fieldBox {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-end: 20px;
+}
+
+.rtl-admin .submit-row {
+  text-align: start;
+}
+
+.rtl-admin .submit-row a.deletelink {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-start: auto;
+}
+
+.rtl-admin .related-lookup,
+.rtl-admin .file-upload .deletelink {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-start: 5px;
+}
+
+.rtl-admin .related-widget-wrapper {
+  float: inline-start;
+}
+
+/* ==========================================================================
+   11. Date / time widgets
+   ========================================================================== */
+
+.rtl-admin .vDateField,
+.rtl-admin .vTimeField {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-end: 2px;
+}
+
+.rtl-admin .datetime input,
+.rtl-admin .form-row .datetime input.vDateField,
+.rtl-admin .form-row .datetime input.vTimeField {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-end: 5px;
+}
+
+.rtl-admin table p.datetime {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+}
+
+.rtl-admin form .form-row p.datetime {
+  overflow: hidden;
+}
+
+.rtl-admin .datetimeshortcuts {
+  margin-inline-start: 4px;
+  white-space: nowrap;
+}
+
+.rtl-admin .calendarnav-previous {
+  left: auto;
+  right: auto;
+  inset-inline-start: 10px;
+}
+
+.rtl-admin .calendarnav-next {
+  left: auto;
+  right: auto;
+  inset-inline-end: 10px;
+}
+
+/* The nav arrows are sprite slices, so "previous" has to pick the other
+   slice once it moves to the other edge. */
+.rtl-admin--rtl .calendarnav-previous {
+  background: url(../../admin/img/calendar-icons.svg) 0 -15px no-repeat;
+}
+
+.rtl-admin--rtl .calendarnav-next {
+  background: url(../../admin/img/calendar-icons.svg) 0 0 no-repeat;
+}
+
+.rtl-admin .calendar caption,
+.rtl-admin .calendarbox h2 {
+  text-align: center;
+}
+
+.rtl-admin .calendar td,
+.rtl-admin .calendar th {
+  text-align: center;
+}
+
+/* Weekday columns run in the page direction, so the first day of the week
+   sits on the leading edge rather than stranded on the far side. */
+.rtl-admin--rtl .calendar table {
+  direction: rtl;
+}
+
+.rtl-admin .timezonewarning {
+  unicode-bidi: isolate;
+}
+
+/* ==========================================================================
+   12. Inlines
+   ========================================================================== */
+
+.rtl-admin .inline-related h2,
+.rtl-admin .inline-group h2 {
+  text-align: start;
+}
+
+.rtl-admin .inline-related h3 span.delete {
+  float: inline-end;
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-start: 20px;
+  left: auto;
+  right: auto;
+  inset-inline-end: 10px;
+}
+
+.rtl-admin .inline-related h3 span.delete label {
+  margin-left: 0;
+  margin-right: 0;
+  margin-inline-start: 2px;
+}
+
+.rtl-admin .inline-deletelink {
+  float: inline-end;
+}
+
+.rtl-admin .inline-group .tabular td.original p {
+  left: auto;
+  right: auto;
+  inset-inline-start: 0;
+}
+
+.rtl-admin .inline-group .tabular tr.has_original td {
+  padding-top: 2em;
+}
+
+.rtl-admin .add-row a,
+.rtl-admin .empty-form + .add-row a {
+  background-position: 0 50%;
+  padding-left: 0;
+  padding-right: 0;
+  padding-inline-start: 16px;
+}
+
+.rtl-admin--rtl .add-row a {
+  background-position: 100% 50%;
+}
+
+/* ==========================================================================
+   13. Many-to-many "filter_horizontal" / "filter_vertical" selector
+   ========================================================================== */
+
+.rtl-admin .selector {
+  float: inline-start;
+}
+
+.rtl-admin .selector .selector-filter {
+  text-align: start;
+}
+
+.rtl-admin .selector .selector-filter label,
+.rtl-admin .inline-group .aligned .selector .selector-filter label {
+  float: inline-start;
+}
+
+.rtl-admin .selector-chooseall,
+.rtl-admin .selector-clearall {
+  text-align: start;
+}
+
+.rtl-admin .stacked {
+  float: inline-start;
+}
+
+.rtl-admin .stacked .selector-chooser li {
+  float: inline-start;
+}
+
+/* The add/remove/choose-all sprite offsets are already mirrored by
+   admin/css/rtl.css; leave them alone and only fix what it misses. */
+
+/* ==========================================================================
+   14. Autocomplete (select2)
+   ========================================================================== */
+
+.rtl-admin--rtl .select2-container--admin-autocomplete .select2-selection--single .select2-selection__arrow {
+  left: 1px;
+  right: auto;
+}
+
+.rtl-admin--rtl .select2-container--admin-autocomplete .select2-selection--single .select2-selection__clear {
+  float: left;
+}
+
+.rtl-admin--rtl .select2-container--admin-autocomplete .select2-selection--single .select2-selection__rendered {
+  padding-left: 20px;
+  padding-right: 8px;
+}
+
+.rtl-admin--rtl .select2-container--admin-autocomplete .select2-selection--multiple .select2-selection__choice {
+  float: right;
+  margin-left: 5px;
+  margin-right: auto;
+}
+
+.rtl-admin--rtl .select2-results__option {
+  text-align: start;
+}
+
+/* ==========================================================================
+   15. Login page
+   ========================================================================== */
+
+.rtl-admin.login #content {
+  text-align: start;
+}
+
+.rtl-admin.login .form-row label {
+  text-align: start;
+}
+
+.rtl-admin.login .submit-row {
+  padding: 1em 0 0 0;
+  text-align: end;
+}
+
+.rtl-admin.login .password-reset-link {
+  text-align: center;
+}
+
+.rtl-admin.login #branding .rtl-admin-language-switcher {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 0;
+}
+
+/* ==========================================================================
+   16. Narrow viewports
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .rtl-admin #user-tools {
+    float: none;
+    text-align: start;
+  }
+
+  .rtl-admin .object-tools {
+    float: none;
+  }
+
+  .rtl-admin .object-tools li {
+    float: inline-start;
+  }
+
+  .rtl-admin #changelist-filter {
+    margin-inline-start: 0;
+  }
+
+  .rtl-admin form .aligned ul,
+  .rtl-admin form .aligned p.help,
+  .rtl-admin form .aligned div.help,
+  .rtl-admin form .aligned input + p.help,
+  .rtl-admin form .aligned textarea + p.help,
+  .rtl-admin form .aligned select + p.help,
+  .rtl-admin form .aligned input + div.help,
+  .rtl-admin form .aligned textarea + div.help,
+  .rtl-admin form .aligned select + div.help {
+    margin-inline-start: 0;
+    padding-inline-start: 0;
+  }
+
+  .rtl-admin-language-switcher {
+    margin-inline-start: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .rtl-admin-language-switcher__label {
+    display: none;
+  }
+}

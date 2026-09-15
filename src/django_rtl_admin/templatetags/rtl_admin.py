@@ -1,0 +1,267 @@
+"""Template filters and tags: ``{% load rtl_admin %}``."""
+
+from __future__ import annotations
+
+import django
+from django import template
+from django.conf import settings
+from django.templatetags.static import static
+from django.urls import NoReverseMatch, reverse
+from django.utils.html import format_html, format_html_join
+from django.utils.safestring import mark_safe
+from django.utils.translation import get_language, get_language_info
+
+from .. import bidi as bidi_module
+from .. import formatting
+from ..conf import rtl_settings
+
+register = template.Library()
+
+
+# ---------------------------------------------------------------------------
+# Bidirectional text
+# ---------------------------------------------------------------------------
+
+
+@register.filter(name="bidi_isolate", is_safe=True, needs_autoescape=True)
+def bidi_isolate(value, direction=None, autoescape=True):
+    """Wrap the whole value in a Unicode isolate.
+
+    ``{{ book.isbn|bidi_isolate }}`` renders ``978-0-13-468599-1`` the right
+    way round even in the middle of an Arabic sentence.  Pass ``"ltr"`` or
+    ``"rtl"`` to force the direction: ``{{ value|bidi_isolate:"ltr" }}``.
+    """
+    return bidi_module.mark_isolated(value, direction, autoescape=autoescape)
+
+
+@register.filter(name="bidi_runs", is_safe=True, needs_autoescape=True)
+def bidi_runs(value, base=None, autoescape=True):
+    """Isolate only the embedded opposite-direction runs inside the value.
+
+    Use it on prose that mixes scripts, where wrapping the whole string would
+    be too blunt: ``{{ note|bidi_runs }}``.
+    """
+    return bidi_module.mark_isolated_runs(value, base, autoescape=autoescape)
+
+
+@register.filter(name="bidi_strip", is_safe=True)
+def bidi_strip(value):
+    """Remove every isolate and directional mark from the value."""
+    return bidi_module.strip_isolates("" if value is None else str(value))
+
+
+@register.filter(name="bidi_dir")
+def bidi_dir(value, default="ltr"):
+    """First-strong direction of the value: ``"rtl"`` or ``"ltr"``.
+
+    Handy for ``dir`` attributes: ``<td dir="{{ value|bidi_dir }}">``.
+    """
+    return bidi_module.text_direction("" if value is None else str(value), default)
+
+
+# ---------------------------------------------------------------------------
+# Locale-aware formatting
+# ---------------------------------------------------------------------------
+
+
+@register.filter(name="l10n_number")
+def l10n_number(value, decimal_pos=None):
+    """Locale-aware number, in the locale's own numbering system."""
+    if decimal_pos not in (None, ""):
+        decimal_pos = int(decimal_pos)
+    else:
+        decimal_pos = None
+    return formatting.format_number(value, decimal_pos=decimal_pos)
+
+
+@register.filter(name="l10n_currency")
+def l10n_currency(value, currency=None):
+    """Locale-aware money: ``{{ book.price|l10n_currency:"EGP" }}``."""
+    return formatting.format_currency(value, currency)
+
+
+@register.filter(name="l10n_percent")
+def l10n_percent(value):
+    """Locale-aware percentage from a 0..1 ratio."""
+    return formatting.format_percent(value)
+
+
+@register.filter(name="l10n_date")
+def l10n_date(value, fmt="medium"):
+    """Locale-aware date: ``{{ book.published_on|l10n_date:"long" }}``."""
+    return formatting.format_date(value, fmt)
+
+
+@register.filter(name="l10n_datetime")
+def l10n_datetime(value, fmt="medium"):
+    """Locale-aware date and time."""
+    return formatting.format_datetime(value, fmt)
+
+
+@register.filter(name="l10n_time")
+def l10n_time(value, fmt="medium"):
+    """Locale-aware time of day."""
+    return formatting.format_time(value, fmt)
+
+
+@register.filter(name="local_digits")
+def local_digits(value):
+    """Rewrite the digits in a ready-made string using the active locale's set."""
+    if value is None:
+        return ""
+    return formatting.transliterate_digits(str(value), formatting.numbering_system())
+
+
+# ---------------------------------------------------------------------------
+# Direction helpers
+# ---------------------------------------------------------------------------
+
+
+@register.simple_tag(name="rtl_admin_direction")
+def rtl_admin_direction():
+    """``"rtl"`` or ``"ltr"`` for the active language."""
+    return bidi_module.current_direction()
+
+
+@register.simple_tag(name="rtl_admin_body_class")
+def rtl_admin_body_class():
+    """Body classes that switch the stylesheet's behaviour on and off."""
+    classes = ["rtl-admin", f"rtl-admin--{bidi_module.current_direction()}"]
+    if rtl_settings.ISOLATE_TABLE_CELLS:
+        classes.append("rtl-admin--isolate-cells")
+    if rtl_settings.PLAINTEXT_FORM_FIELDS:
+        classes.append("rtl-admin--plaintext-fields")
+    return " ".join(classes)
+
+
+@register.simple_tag(name="rtl_admin_site_name_tag")
+def rtl_admin_site_name_tag():
+    """``h1`` or ``div`` -- whichever the running Django's admin CSS expects."""
+    return "h1" if django.VERSION < (5, 0) else "div"
+
+
+@register.simple_tag(name="rtl_admin_styles")
+def rtl_admin_styles():
+    """The ``<link>`` (and optional font override) for the admin stylesheet."""
+    if not rtl_settings.ENABLE_CSS:
+        return ""
+    html = format_html(
+        '<link rel="stylesheet" href="{}">',
+        static("django_rtl_admin/css/rtl-admin.css"),
+    )
+    font_stack = rtl_settings.FONT_STACK
+    if font_stack:
+        if not isinstance(font_stack, str):
+            font_stack = ", ".join(font_stack)
+        html += format_html(
+            "<style>:root {{ --rtl-admin-font-stack: {}; }}</style>", font_stack
+        )
+    return html
+
+
+@register.simple_tag(name="rtl_admin_scripts")
+def rtl_admin_scripts():
+    """Progressive-enhancement script for the language switcher."""
+    if not rtl_settings.LANGUAGE_SWITCHER:
+        return ""
+    return format_html(
+        '<script src="{}" defer></script>',
+        static("django_rtl_admin/js/language_switcher.js"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Language switcher
+# ---------------------------------------------------------------------------
+
+
+def _label_for(code, configured_label):
+    try:
+        info = get_language_info(code)
+    except KeyError:
+        return configured_label or code
+    style = rtl_settings.LANGUAGE_SWITCHER_LABELS
+    native = info.get("name_local") or info.get("name") or code
+    translated = configured_label or info.get("name") or code
+    if style == "native":
+        return native
+    if style == "translated":
+        return translated
+    if str(native) == str(translated):
+        return native
+    # Isolate the parenthesised half: without it the brackets around a Latin
+    # name break out of an Arabic option label and end up on the wrong side.
+    return f"{native} {bidi_module.isolate(f'({translated})')}"
+
+
+def switcher_languages():
+    """The ``(code, label, bidi, is_active)`` rows shown by the switcher."""
+    configured = rtl_settings.LANGUAGE_SWITCHER_LANGUAGES
+    if configured is None:
+        configured = getattr(settings, "LANGUAGES", ())
+    rows = []
+    active = (get_language() or "").lower()
+    for entry in configured:
+        if isinstance(entry, str):
+            code, label = entry, None
+        else:
+            code, label = entry[0], entry[1]
+        rows.append(
+            {
+                "code": code,
+                "label": _label_for(code, label),
+                "bidi": bidi_module.is_rtl_language(code),
+                "is_active": code.lower() == active,
+            }
+        )
+    return rows
+
+
+@register.inclusion_tag(
+    "django_rtl_admin/language_switcher.html",
+    takes_context=True,
+    name="rtl_admin_language_switcher",
+)
+def rtl_admin_language_switcher(context):
+    """Render the admin language switcher.
+
+    Silently renders nothing when the switcher is turned off, when fewer than
+    two languages are configured, or when ``django.conf.urls.i18n`` is not
+    routed (there is nowhere to POST to).
+    """
+    if not rtl_settings.LANGUAGE_SWITCHER:
+        return {"enabled": False}
+    languages = switcher_languages()
+    if len(languages) < 2:
+        return {"enabled": False}
+    try:
+        set_language_url = reverse("set_language")
+    except NoReverseMatch:
+        return {"enabled": False}
+    request = context.get("request")
+    return {
+        "enabled": True,
+        "languages": languages,
+        "set_language_url": set_language_url,
+        "redirect_to": request.get_full_path() if request is not None else "",
+        "csrf_token": context.get("csrf_token", ""),
+    }
+
+
+@register.simple_tag(name="rtl_admin_language_links")
+def rtl_admin_language_links():
+    """The switcher's languages as plain data, for custom templates."""
+    return switcher_languages()
+
+
+@register.simple_tag(name="rtl_admin_isolated_join")
+def rtl_admin_isolated_join(values, separator=", "):
+    """Join values, isolating each one -- for list columns in a mixed admin."""
+    values = list(values or [])
+    if not values:
+        return ""
+    return mark_safe(
+        format_html_join(
+            separator, "{}", ((bidi_module.mark_isolated(v),) for v in values)
+        )
+    )

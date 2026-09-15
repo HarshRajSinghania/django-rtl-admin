@@ -1,0 +1,27 @@
+{% extends "admin/base.html" %}
+{% load i18n rtl_admin %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+{% rtl_admin_site_name_tag as site_name_tag %}
+<{{ site_name_tag }} id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></{{ site_name_tag }}>
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+  {% rtl_admin_language_switcher %}
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block userlinks %}{{ block.super }}{% rtl_admin_language_switcher %}{% endblock %}
+
+{% block bodyclass %}{{ block.super }} {% rtl_admin_body_class %}{% endblock %}
+
+{% comment %}
+Loaded from the `responsive` block rather than `extrastyle`, because that is
+the last stylesheet hook in admin/base.html: the direction-aware rules have to
+win over admin/css/rtl.css and admin/css/responsive_rtl.css, both of which are
+linked after `extrastyle`.
+{% endcomment %}
+{% block responsive %}{{ block.super }}{% rtl_admin_styles %}{% rtl_admin_scripts %}{% endblock %}

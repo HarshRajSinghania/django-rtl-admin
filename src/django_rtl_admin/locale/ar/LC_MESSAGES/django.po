@@ -1,0 +1,19 @@
+# django-rtl-admin translations.
+# Copyright (c) 2026 Marwan Maher
+# This file is distributed under the same MIT licence as the package.
+msgid ""
+msgstr ""
+"Project-Id-Version: django-rtl-admin 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ar\n"
+
+#: templates/django_rtl_admin/language_switcher.html
+msgid "Language"
+msgstr "اللغة"
+
+#: apps.py
+msgid "Bilingual / RTL admin"
+msgstr "إدارة ثنائية اللغة / من اليمين إلى اليسار"
