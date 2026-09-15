@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/MarwanMaher0/django-rtl-admin/actions/workflows/ci.yml/badge.svg)](https://github.com/MarwanMaher0/django-rtl-admin/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://github.com/MarwanMaher0/django-rtl-admin)
-[![Django](https://img.shields.io/badge/django-4.2%20%7C%205.0%20%7C%205.1%20%7C%205.2-092e20)](https://www.djangoproject.com/)
+[![Django](https://img.shields.io/badge/django-4.2%20%7C%205.x%20%7C%206.x-092e20)](https://www.djangoproject.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 The Django admin is *nearly* bilingual. Switch it to Arabic, Hebrew, Persian or
@@ -12,7 +12,7 @@ file path, a version string, a hyphenated date) is quietly reordered on screen.
 
 `django-rtl-admin` fixes those things. It is one app you add to
 `INSTALLED_APPS`; it does not replace the admin, restyle it, or ask you to
-change your `ModelAdmin` classes.
+change your `ModelAdmin` classes. Python 3.10+, Django 4.2 through 6.1.
 
 | English | Arabic (Egypt) |
 | --- | --- |
@@ -52,8 +52,11 @@ Django 5.2, in an `ar-EG` admin:
 7. **English labels render with the colon on the wrong side** — `:Title
    (Arabic)` instead of `Title (Arabic):` — because nothing in the admin is
    direction-aware at the text level.
-8. **An English fieldset description gets its full stop at the *start* of the
-   line**, for the same reason.
+8. **An English fieldset description, or a field's help text, gets its full
+   stop at the *start* of the line**, for the same reason. (`unicode-bidi` is
+   not an inherited property and the admin wraps help text in a second `<div>`,
+   so fixing this needs the child element named explicitly — which is the kind
+   of detail a hand-maintained mirror file is never going to keep up with.)
 9. **A path typed into a text input is reordered.**
    `/archive/ar/2024-03-05/file.pdf` displays with the leading slash at the
    other end. The database is fine; the human reads the wrong string.
@@ -428,7 +431,9 @@ without Babel, the mixin applied to a real changelist, the language switcher,
 the settings namespace, the system checks, and the fact that the template
 overrides resolve ahead of `django.contrib.admin`.
 
-CI runs Python 3.10 and 3.12 against Django 4.2 and 5.2.
+CI runs Python 3.10 and 3.12 against Django 4.2 and 5.2, and Python 3.12 and
+3.13 against Django 6.1 — each of those twice, once with Babel installed and
+once without, so the fallback path is covered too.
 
 ---
 

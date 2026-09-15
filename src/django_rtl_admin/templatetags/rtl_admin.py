@@ -140,33 +140,51 @@ def rtl_admin_site_name_tag():
     return "h1" if django.VERSION < (5, 0) else "div"
 
 
-@register.simple_tag(name="rtl_admin_styles")
-def rtl_admin_styles():
+def _nonce_attr(context):
+    """``nonce="..."`` when the project is using Django's CSP support.
+
+    Django 6.0 puts a ``csp_nonce`` in the template context when the CSP
+    context processor is enabled.  Reading the key rather than checking a
+    version keeps this a no-op on every other Django.
+    """
+    nonce = context.get("csp_nonce") if context else None
+    if nonce is None:
+        return ""
+    return format_html(' nonce="{}"', nonce)
+
+
+@register.simple_tag(takes_context=True, name="rtl_admin_styles")
+def rtl_admin_styles(context=None):
     """The ``<link>`` (and optional font override) for the admin stylesheet."""
     if not rtl_settings.ENABLE_CSS:
         return ""
+    nonce = _nonce_attr(context)
     html = format_html(
-        '<link rel="stylesheet" href="{}">',
+        '<link rel="stylesheet" href="{}"{}>',
         static("django_rtl_admin/css/rtl-admin.css"),
+        nonce,
     )
     font_stack = rtl_settings.FONT_STACK
     if font_stack:
         if not isinstance(font_stack, str):
             font_stack = ", ".join(font_stack)
         html += format_html(
-            "<style>:root {{ --rtl-admin-font-stack: {}; }}</style>", font_stack
+            "<style{}>:root {{ --rtl-admin-font-stack: {}; }}</style>",
+            nonce,
+            font_stack,
         )
     return html
 
 
-@register.simple_tag(name="rtl_admin_scripts")
-def rtl_admin_scripts():
+@register.simple_tag(takes_context=True, name="rtl_admin_scripts")
+def rtl_admin_scripts(context=None):
     """Progressive-enhancement script for the language switcher."""
     if not rtl_settings.LANGUAGE_SWITCHER:
         return ""
     return format_html(
-        '<script src="{}" defer></script>',
+        '<script src="{}" defer{}></script>',
         static("django_rtl_admin/js/language_switcher.js"),
+        _nonce_attr(context),
     )
 
 

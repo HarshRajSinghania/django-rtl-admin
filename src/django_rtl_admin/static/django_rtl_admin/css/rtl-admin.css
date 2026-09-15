@@ -84,13 +84,19 @@ body.rtl-admin--rtl {
    direction from its first strong character, which is what stops an English
    label from rendering as ":Title (Arabic)" with the colon flung to the far
    side of an RTL form. */
+/* `unicode-bidi` is not an inherited property, and the admin wraps help text
+   in a second <div>, so the direct children have to be named too or the inner
+   box quietly falls back to the page direction. */
 .rtl-admin .form-row label,
 .rtl-admin .aligned label,
 .rtl-admin fieldset .description,
+.rtl-admin fieldset .description > *,
 .rtl-admin .help,
+.rtl-admin .help > *,
 .rtl-admin p.help,
 .rtl-admin div.help,
 .rtl-admin div.readonly,
+.rtl-admin div.readonly > *,
 .rtl-admin .form-row .readonly,
 .rtl-admin .inline-related h3 .inline_label {
   unicode-bidi: plaintext;

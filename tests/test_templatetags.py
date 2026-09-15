@@ -218,3 +218,17 @@ def test_isolated_join_tag():
     output = render("{% rtl_admin_isolated_join values %}", values=["a", "<b>"])
     assert output == f"{FSI}a{PDI}, {FSI}&lt;b&gt;{PDI}"
     assert render("{% rtl_admin_isolated_join values %}", values=[]) == ""
+
+
+def test_styles_and_scripts_carry_a_csp_nonce_when_one_is_available():
+    # Django 6.0's CSP support puts a `csp_nonce` in the template context.
+    context = Context({"csp_nonce": "abc123"})
+    styles = Template("{% load rtl_admin %}{% rtl_admin_styles %}").render(context)
+    scripts = Template("{% load rtl_admin %}{% rtl_admin_scripts %}").render(context)
+    assert 'nonce="abc123"' in styles
+    assert 'nonce="abc123"' in scripts
+
+
+def test_styles_carry_no_nonce_attribute_without_csp():
+    assert "nonce" not in render("{% rtl_admin_styles %}")
+    assert "nonce" not in render("{% rtl_admin_scripts %}")
