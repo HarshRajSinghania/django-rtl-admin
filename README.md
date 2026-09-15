@@ -78,10 +78,11 @@ CLDR numbering systems are simply not modelled.
 ## Install
 
 ```bash
-pip install django-rtl-admin
+# Not on PyPI yet: install a tagged release from GitHub
+pip install "django-rtl-admin @ git+https://github.com/MarwanMaher0/django-rtl-admin@v0.1.0"
 
 # optional, for CLDR-accurate numbers, dates and currency:
-pip install "django-rtl-admin[babel]"
+pip install "django-rtl-admin[babel] @ git+https://github.com/MarwanMaher0/django-rtl-admin@v0.1.0"
 ```
 
 Then put the app **above** `django.contrib.admin`, so its template overrides win:
@@ -252,7 +253,7 @@ knows this; Django does not model it at all.
 
 [Babel](https://babel.pocoo.org/) is used when it is installed and falls back to
 `django.utils.formats` plus a digit transliteration step when it is not —
-`pip install django-rtl-admin[babel]` if you want CLDR patterns, but nothing
+the `babel` extra (see Install) if you want CLDR patterns, but nothing
 here raises without it.
 
 ### 4. A language switcher
