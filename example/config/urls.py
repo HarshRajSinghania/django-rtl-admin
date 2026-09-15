@@ -1,0 +1,8 @@
+from django.contrib import admin
+from django.urls import include, path
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    # The language switcher posts here.
+    path("i18n/", include("django.conf.urls.i18n")),
+]
